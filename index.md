@@ -1,37 +1,92 @@
 ## Welcome to GitHub Pages
+/**************************************************************
+ * Blynk is a platform with iOS and Android apps to control
+ * Arduino, Raspberry Pi and the likes over the Internet.
+ * You can easily build graphic interfaces for all your
+ * projects by simply dragging and dropping widgets.
+ *
+ *   Downloads, docs, tutorials: http://www.blynk.cc
+ *   Blynk community:            http://community.blynk.cc
+ *   Social networks:            http://www.fb.com/blynkapp
+ *                               http://twitter.com/blynk_app
+ *
+ * Blynk library is licensed under MIT license
+ * This example code is in public domain.
+ *
+ **************************************************************
+ * This example shows how value can be pushed from Arduino to
+ * the Blynk App.
+ *
+ * WARNING :
+ * For this example you'll need SimpleTimer library:
+ *   https://github.com/jfturcot/SimpleTimer
+ * and Adafruit DHT sensor library:
+ *   https://github.com/adafruit/DHT-sensor-library
+ *
+ * App project setup:
+ *   Value Display widget attached to V5
+ *   Value Display widget attached to V6
+ *
+ **************************************************************/
 
-You can use the [editor on GitHub](https://github.com/ffullgraff/Maste-Blynk-and-10-Devices/edit/master/index.md) to maintain and preview the content for your website in Markdown files.
+#define BLYNK_PRINT Serial    // Comment this out to disable prints and save space
+#include <SPI.h>
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+#include <SimpleTimer.h>
+#include <DHT.h>
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+// You should get Auth Token in the Blynk App.
+// Go to the Project Settings (nut icon).
+char auth[] = "a85a3c5cc55f46bfa652d575b8838774";
 
-### Markdown
+// Your WiFi credentials.
+// Set password to "" for open networks.
+char ssid[] = "FFXXX";
+char pass[] = "xxxxxxxxxx";
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+#define DHTPIN 2          // conectar sensor DHT11 a Pin D4
 
-```markdown
-Syntax highlighted code block
+// Uncomment whatever type you're using!
+#define DHTTYPE DHT11     // DHT 11
+//#define DHTTYPE DHT22   // DHT 22, AM2302, AM2321
+//#define DHTTYPE DHT21   // DHT 21, AM2301
 
-# Header 1
-## Header 2
-### Header 3
+DHT dht(DHTPIN, DHTTYPE);
+SimpleTimer timer;
 
-- Bulleted
-- List
+// This function sends Arduino's up time every second to Virtual Pin (5).
+// In the app, Widget's reading frequency should be set to PUSH. This means
+// that you define how often to send data to Blynk App.
+void sendSensor()
+{
+  float h = dht.readHumidity();
+  float t = dht.readTemperature(); // or dht.readTemperature(true) for Fahrenheit
 
-1. Numbered
-2. List
+  if (isnan(h) || isnan(t)) {
+    Serial.println("Failed to read from DHT sensor!");
+    return;
+  }
+  // You can send any value at any time.
+  // Please don't send more that 10 values per second.
+  Blynk.virtualWrite(V5, h);
+  Blynk.virtualWrite(V6, t);
+}
 
-**Bold** and _Italic_ and `Code` text
+void setup()
+{
+  Serial.begin(9600); // See the connection status in Serial Monitor
+  Blynk.begin(auth, ssid, pass);
 
-[Link](url) and ![Image](src)
-```
+  dht.begin();
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+  // Setup a function to be called every second
+  timer.setInterval(1000L, sendSensor);
+}
 
-### Jekyll Themes
+void loop()
+{
+  Blynk.run(); // Initiates Blynk
+  timer.run(); // Initiates SimpleTimer
+}
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/ffullgraff/Maste-Blynk-and-10-Devices/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
